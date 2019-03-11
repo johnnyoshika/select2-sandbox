@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/assets/lib/select2-3.5.1/select2.css" />
+    <style>
+      .container {
+        padding: 20px;
+      }
+
+      .input-width {
+        width: 500px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="container">Select2 Version 3.5 example</h1>
+    <div class="container">
+      <select
+        name="categories-multiple"
+        data-dropdown-multiple
+        multiple
+        class="input-width"
+      ></select>
+    </div>
+    <div class="container">
+      <input type="hidden" name="locations" value="Whistler, BC" class="input-width" data-dropdown-location />
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="/assets/lib/select2-3.5.1/select2.min.js"></script>
+    <script>
+      (function() {
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState !== 4) return;
+
+          var categories = JSON.parse(xhr.responseText).data;
+          document.querySelector(
+            '[data-dropdown-multiple]'
+          ).innerHTML = categories
+            .map(c => '<option value="' + c.id + '">' + c.name + '</option>')
+            .join('');
+
+          $('[data-dropdown-multiple]').select2();
+        };
+        xhr.open('GET', '/api/v1.1/jobcategories');
+        xhr.send();
+
+
+
+        // select2 version 4 example: https://stackoverflow.com/a/23835375/188740
+        // version 4 replaced createSearchChoice with createTag: https://stackoverflow.com/a/30019966/188740
+        // default implementation of createTag: https://github.com/select2/select2/blob/ac1680d81dcc60009c5d0fe0dd52e70bc065c140/src/js/select2/data/tags.js#L87-L98
+        // select2 version 4 has selectOnClose: true https://stackoverflow.com/a/40870378/188740
+
+        $('[data-dropdown-location]').select2({
+          placeholder: 'Search for a repository',
+          minimumInputLength: 3,
+          maximumSelectionLength: 3,
+          tags: true,
+          multiple: true,
+          createSearchChoice: function(term, data) {
+            if (!data.length)
+              return { id: term, text: term };
+          },
+          ajax: {
+            url: '/api/v1.1/locations?pageSize=7',
+            dataType: 'json',
+            quietMillis: 250,
+            data: function(term, page) {
+              return {
+                q: term
+              };
+            },
+            results: function(data, page) {
+              return { 
+                results: data.data.map(l => ({id: l.description, text: l.description}))
+              };
+            },
+            cache: true
+          },
+          initSelection: function(element, callback) {
+            var description = $(element).val();
+            callback({id: description, text: description});
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
