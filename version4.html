@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+    <style>
+      .container {
+        padding: 20px;
+      }
+
+      .input-width {
+        width: 500px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="container">Select2 Version 4 example</h1>
+    <div class="container">
+      <div>single select</div>
+      <select name="categories-single" data-dropdown class="input-width"></select>
+    </div>
+    <div class="container">
+      <div>multi select</div>
+      <select name="categories-multiple" data-dropdown multiple class="input-width"></select>
+    </div>
+    <div class="container">
+      <div>ajax dynamic single select</div>
+      <select name="locations-single" class="input-width" data-dropdown-location>
+        <option value=""></option>
+        <option value="Whistler, BC" selected>Whistler, BC</option>
+      </select>
+    </div>
+    <div class="container">
+      <div>ajax dynamic multi select</div>
+      <select name="locations-multiple" class="input-width" multiple data-dropdown-location>
+        <option value="Whistler, BC" selected>Whistler, BC</option>
+        <option value="Edmonton, AB" selected>Edmonton, AB</option>
+      </select>
+      </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+    <script>
+      (function() {
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState !== 4) return;
+
+          var categories = JSON.parse(xhr.responseText).data;
+          var html = categories
+            .map(c => '<option value="' + c.id + '">' + c.name + '</option>')
+            .join('');
+
+          $('[data-dropdown]')
+            .html(html)
+            .select2({
+              // tags: true,
+              // selectOnClose: true,
+              // tags: true,
+              // createTag: function(params) {
+              //   console.log('createTag', params);
+              // }
+            });
+        };
+        xhr.open('GET', '/api/v1.1/jobcategories');
+        xhr.send();
+
+
+
+        // select2 version 4 example: https://stackoverflow.com/a/23835375/188740
+        // version 4 replaced createSearchChoice with createTag: https://stackoverflow.com/a/30019966/188740
+        // default implementation of createTag: https://github.com/select2/select2/blob/ac1680d81dcc60009c5d0fe0dd52e70bc065c140/src/js/select2/data/tags.js#L87-L98
+        // select2 version 4 has selectOnClose: true https://stackoverflow.com/a/40870378/188740
+
+        // tags don't seem to work with ajax
+        $('[data-dropdown-location]').select2({
+          placeholder: 'Enter location',
+          allowClear: true, // don't need this for multiple select, as the extra 'x' button is redundant
+          maximumSelectionLength: 3,
+          minimumInputLength: 3,
+          ajax: {
+            delay: 250,
+            url: '/api/v1.1/locations',
+            dataType: 'json',
+            data: function(params) {
+              this.data('term', params.term);
+              return {
+                q: params.term,
+                page: params.page || 1,
+                pageSize: 9
+              };
+            },
+            processResults: function(data) {
+              if (data.data.length)
+                return {
+                  results: data.data.map(d => ({id: d.description, text: d.description})),
+                  pagination: {
+                    more: !!data.paging.next
+                  }
+                };
+              else
+                return {
+                  results: [{ id: this.$element.data('term'), text: this.$element.data('term') }],
+                  pagination: {
+                    more: false
+                  }
+                };
+            },
+            cache: true
+          }
+        });
+
+      }());
+    </script>
+  </body>
+</html>
