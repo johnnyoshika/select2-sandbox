@@ -6,4 +6,5 @@
   OR
   * `http-server --proxy https://www.bcjobs.ca`
 * Browse:
-  * http://localhost:8080/
+  * Select2 version 3.5.1: http://localhost:8080/
+  * Select2 version 4.0.6-rc.0: http://localhost:8080/version4
